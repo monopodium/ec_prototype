@@ -11,3 +11,6 @@
 ### 创建本项目的镜像，启动本项目的docker
 * 
 * docker exec -ti mashuang_ec_docker bash
+
+git config user.email "946731809@qq.com"
+git config user.name "monopodium"
