@@ -1,0 +1,28 @@
+docker build -t monopodium/mashuang_ec --rm .
+docker rmi monopodium/mashuang_ec
+
+docker run -d --name docker_mashuang_ec -p 8080:80  monopodium/mashuang_ec
+
+src="$(pwd)"
+docker run -it --name docker_mashuang_ec --mount type=bind,src=/home/mashuang/codes/ec_prototype/projects/ec_prototype/OOPPO/oppo_project,target=/home/project monopodium/mashuang_ec /bin/bash
+
+docker rm -f docker_mashuang_ec
+
+docker run -it --name docker_mashuang_test monopodium/mashuang_test /bin/bash
+
+
+docker run -it --name docker_mashuang_test monopodium/python_v10 /bin/bash
+
+wget https://bootstrap.pypa.io/pip/3.6/get-pip.py
+
+docker stop $(docker ps -a | grep "Exited" | awk '{print $1 }') //停止容器
+
+docker rm $(docker ps -a | grep "Exited" | awk '{print $1 }') //删除容器
+
+docker rmi $(docker images | grep "none" | awk '{print $3}') //删除镜像
+
+docker build -t monopodium/mashuang_test --rm .
+
+docker build -t monopodium/ms_python_v10 --rm .
+
+docker run -it --name docker_mashuang_test monopodium/ms_python_v10 /bin/bash
