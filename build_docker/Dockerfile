@@ -17,10 +17,12 @@ RUN yum install -y wget \
     zlib-devel \
     openssl \
     openssl-devel \
-    openssh-server; \
+    openssh-server \
+    telnet; \
     yum install libffi-devel  \
     perl make which epel-release -y ;\
-    yum install -y openssl11-devel
+    yum install -y openssl11-devel 
+    
 
 RUN mkdir -p /tmp/cmake && \
     pushd /tmp/cmake && \
@@ -36,13 +38,13 @@ ADD install_third_party.sh /home/
 RUN chmod +x ./install_third_party.sh &&\
     /bin/sh ./install_third_party.sh
 
-RUN yum install -y zsh \
-    && git clone  https://ghproxy.com/https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh \
-    && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
-    && sed -i "s/robbyrussell/ys/" ~/.zshrc \
-    && git clone  https://ghproxy.com/https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
-    && git clone  https://ghproxy.com/https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
-    && sed -i "s/plugins=(git.*)$/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" ~/.zshrc 
+RUN yum install -y zsh; \
+    git clone  https://ghproxy.com/https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh; \
+    cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc; \
+    sed -i "s/robbyrussell/ys/" ~/.zshrc; \
+    git clone  https://ghproxy.com/https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions; \
+    git clone  https://ghproxy.com/https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting; \
+    sed -i "s/plugins=(git.*)$/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/" ~/.zshrc 
 
 # # ENTRYPOINT ["zsh"]
 
@@ -58,6 +60,10 @@ RUN curl https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz --output /tm
     curl https://bootstrap.pypa.io/get-pip.py --output get-pip.py;\
     python3.10 get-pip.py;\
     python3.10 -m pip install --upgrade pip
+# EXPOSE 11211
+# ENTRYPOINT /home/memcached/bin/memcached
+# CMD ["-m", "1024","--max-item-size=16777216", "-u","root"]
+
 
 
   

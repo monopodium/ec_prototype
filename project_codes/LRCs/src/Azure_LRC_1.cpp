@@ -52,6 +52,7 @@ namespace REPAIR
             }
         }
     };
+    void Azure_LRC_1_Class::generate_sub_optimal_placement(){};
     void Azure_LRC_1_Class::nkr_to_klgr(int n, int k, int r)
     {
         m_l = ceil(k, r) + 1;
@@ -118,7 +119,7 @@ namespace REPAIR
         return true;
     }
     bool Azure_LRC_1_Class::decode(char **data_ptrs, char **coding_ptrs, int *erasures, int blocksize){
-
+        
     }
     bool Azure_LRC_1_Class::azure_lrc_make_matrix(int k, int g, int l, int *final_matrix)
     {
@@ -136,7 +137,7 @@ namespace REPAIR
         {
             std::cout << "final_matrix == NULL" << std::endl;
         }
-        memset(final_matrix,0, sizeof(int) * k * (g + l));
+        bzero(final_matrix, sizeof(int) * k * (g + l));
 
         for (int i = 0; i < g; i++)
         {

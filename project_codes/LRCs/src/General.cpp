@@ -10,6 +10,19 @@ namespace REPAIR
     {
         return m_blocks.size();
     }
+    int Cluster::return_nonparity_number()
+    {
+        int count = 0;
+        for(auto block:m_blocks){
+            if(block[0]=='D'){
+                count++;
+            }
+            if(block[0]=='G'){
+                count++;
+            }
+        }
+        return count;
+    }
     void Cluster::set_upperbound(int upperbound)
     {
         m_upperbound = upperbound;
@@ -46,7 +59,17 @@ namespace REPAIR
     {
         return m_upperbound - m_blocks.size();
     };
-    std::vector<std::string> Cluster::return_all_blocks()
+    const std::vector<std::string> Cluster::return_parity_blocks()
+    {
+        std::vector<std::string> parity_blocks;
+        for(std::string item:m_blocks){
+            if(item[0]=='L'){
+                parity_blocks.push_back(item);
+            }
+        }
+        return parity_blocks;
+    }
+    const std::vector<std::string> Cluster::return_all_blocks()
     {
         return m_blocks;
     };
@@ -104,6 +127,9 @@ namespace REPAIR
         m_best_placement_map.clear();
         m_block_repair_cost.clear();
         m_block_to_groupnumber.clear();
+
+        m_sub_optimal_placement_raw.clear();
+        m_sub_optimal_placement_map.clear();
         m_first = true;
         // klgr_to_nkr(k, , g, r, m_n);
     };
@@ -138,6 +164,8 @@ namespace REPAIR
             calculate_distance();
             generate_flat_placement();
             generate_best_placement();
+
+            generate_sub_optimal_placement();
             m_first = false;
         }
         Placement placement_return;
@@ -157,6 +185,10 @@ namespace REPAIR
         else if (placement_type == REPAIR::Best_Placement)
         {
             placement_map = m_best_placement_map;
+        }
+        else if (placement_type == REPAIR::Sub_Optimal)
+        {
+            placement_map = m_sub_optimal_placement_map;
         }
         else
         {
@@ -192,7 +224,7 @@ namespace REPAIR
         generate_placement(placement_type, seed);
         if (placement_type == REPAIR::Random)
         {
-
+            
             generate_repair_cost(m_random_placement_map);
         }
         else if (placement_type == REPAIR::Flat)
@@ -202,6 +234,10 @@ namespace REPAIR
         else if (placement_type == REPAIR::Best_Placement)
         {
             generate_repair_cost(m_best_placement_map);
+        }
+        else if (placement_type == REPAIR::Sub_Optimal)
+        {
+            generate_repair_cost(m_sub_optimal_placement_map);
         }
         else
         {
@@ -250,6 +286,19 @@ namespace REPAIR
             m_block_repair_cost[item] = repair_set.size() - 1;
         }
     };
+    const REPAIR::PlacementRaw Code_Placement::select_placement_raw(PlacementType placement_type){
+        if(placement_type==PlacementType::Flat){
+            return m_flat_placement_raw;
+        }else if(placement_type==PlacementType::Random){
+            return m_random_placement_raw;
+        }else if(placement_type==PlacementType::Best_Placement){
+            return m_best_placement_raw;
+        }else if(placement_type==PlacementType::Sub_Optimal){
+            return m_sub_optimal_placement_raw;
+        }else{
+            return m_flat_placement_raw;
+        }
+    }
     std::string Code_Placement::index_to_str(std::string block_type, int index)
     {
         return block_type + std::to_string(index);
@@ -382,18 +431,22 @@ namespace REPAIR
     }
     void Code_Placement::print_placement_raw(PlacementType placement_type)
     {
-        PlacementRaw placment;
+        PlacementRaw placement;
         if (placement_type == Random)
         {
-            placment = m_random_placement_raw;
+            placement = m_random_placement_raw;
         }
         else if (placement_type == Best_Placement)
         {
-            placment = m_best_placement_raw;
+            placement = m_best_placement_raw;
+        }
+        else if (placement_type == Sub_Optimal)
+        {
+            placement = m_sub_optimal_placement_raw;
         }
         else
         {
-            placment = m_flat_placement_raw;
+            placement = m_flat_placement_raw;
         }
         for (auto group:m_stripe_information){
             std::cout<<"group "<< " | " << std::flush;
@@ -403,7 +456,7 @@ namespace REPAIR
             std::cout << " | " << std::endl
                       << std::flush;
         }
-        for (auto cluster : placment)
+        for (auto cluster : placement)
         {
             std::cout << "cluster id " << cluster.return_id() << " | " << std::flush;
             for (auto block : cluster.return_all_blocks())
@@ -421,5 +474,14 @@ namespace REPAIR
         std::vector<int> last_matrix(group_data_number, 1);
         jerasure_matrix_encode(group_data_number, 1, 8, last_matrix.data(), data_ptrs, coding_ptrs, blocksize);
         return true;
+    }
+    bool Code_Placement::encode_tansfer_plan(EncodeTransferType encode_transfer_type, TransferPlan& transfer_plan,PlacementType place_type){
+        return false;
+    }
+    std::pair<double, double> Code_Placement::encode_tansfer_cost_balance(EncodeTransferType encode_transfer_type,PlacementType placement_type){
+        double cost = 0;
+        double traffic_balance_ratio = 0;
+        return std::make_pair(cost,traffic_balance_ratio);
+    
     }
 }

@@ -1,0 +1,8 @@
+services:
+  memcacheds:
+    image: monopodium/mashuang_ec
+    working_dir: /project_codes
+    volumes:
+      - ./project_codes:/home/project
+    stdin_open: true
+    tty: true
