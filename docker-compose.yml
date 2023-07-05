@@ -1,6 +1,11 @@
 services:
-  app:
-    image:
-    command: 
+  memcacheds:
+    image: monopodium/mashuang_ec
+    command: "/home/memcached/bin/memcached -m 1024 -p 31400 --max-item-size=16777216 -u root"
     ports:
-      -
+      - 127.0.0.1:31400:31400
+    working_dir: /project_codes
+    volumes:
+      - ./project:/home/project
+    stdin_open: true
+    tty: true

@@ -4,6 +4,7 @@
 tools/*
 project_codes/prototype/build/*
 project_codes/prototype/cmake/*
+project_codes/LRCs/cmake/*
 *a.txt
 .history/*
 .vscode

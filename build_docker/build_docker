@@ -4,7 +4,7 @@ docker rmi monopodium/mashuang_ec
 docker run -d --name docker_mashuang_ec -p 8080:80  monopodium/mashuang_ec
 
 src="$(pwd)"
-docker run -it --name docker_mashuang_ec --mount type=bind,src=/home/mashuang/codes/ec_prototype/projects/ec_prototype/OOPPO/oppo_project,target=/home/project monopodium/mashuang_ec /bin/bash
+docker run -it --name docker_mashuang_ec -p 31400:31400 --mount type=bind,src=/home/mashuang/codes/ec_prototype/projects/ec_prototype/project_codes,target=/home/project monopodium/mashuang_ec /bin/bash
 
 docker rm -f docker_mashuang_ec
 
