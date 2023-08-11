@@ -1,22 +1,22 @@
 #include "interface.h"
 
-void CodePyInterface::CreateEncoder(REPAIR::EncodeType encodetype)
+void CodePyInterface::CreateEncoder(ECProject::EncodeType encodetype)
 {
-    if (encodetype == REPAIR::Xorbas)
+    if (encodetype == ECProject::Xorbas)
     {
-        m_encoder = std::make_shared<REPAIR::Xorbas_Class>();
+        m_encoder = std::make_shared<ECProject::Xorbas_Class>();
     }
-    else if (encodetype == REPAIR::Optimal_LRC)
+    else if (encodetype == ECProject::Optimal_LRC)
     {
-        m_encoder = std::make_shared<REPAIR::Optimal_LRC_Class>();
+        m_encoder = std::make_shared<ECProject::Optimal_LRC_Class>();
     }
-    else if (encodetype == REPAIR::Azure_LRC_1)
+    else if (encodetype == ECProject::Azure_LRC_1)
     {
-        m_encoder = std::make_shared<REPAIR::Azure_LRC_1_Class>();
+        m_encoder = std::make_shared<ECProject::Azure_LRC_1_Class>();
     }
     else
     {
-        m_encoder = std::make_shared<REPAIR::Azure_LRC_Class>();
+        m_encoder = std::make_shared<ECProject::Azure_LRC_Class>();
     }
 };
 
@@ -29,10 +29,10 @@ void CodePyInterface::CreateEncoder(REPAIR::EncodeType encodetype)
     void CodePyInterface::set_parameter(int n_in, int k_in, int r_in, int w){
         m_encoder->set_parameter(n_in, k_in, r_in, w);
     };
-    std::pair<double, double> CodePyInterface::return_DRC_NRC(REPAIR::PlacementType placement_type,int seed){
+    std::pair<double, double> CodePyInterface::return_DRC_NRC(ECProject::PlacementType placement_type,int seed){
         return m_encoder->return_DRC_NRC(placement_type,seed);
     };
-    REPAIR::Placement CodePyInterface::generate_placement(REPAIR::PlacementType placement_type, int random_seed){
+    ECProject::Placement CodePyInterface::generate_placement(ECProject::PlacementType placement_type, int random_seed){
         return m_encoder->generate_placement(placement_type, random_seed);
 
     };
@@ -48,7 +48,7 @@ void CodePyInterface::CreateEncoder(REPAIR::EncodeType encodetype)
     bool CodePyInterface::check_parameter(){
         return m_encoder->check_parameter();
     };
-    void CodePyInterface::print_placement_raw(REPAIR::PlacementType placement_type){
+    void CodePyInterface::print_placement_raw(ECProject::PlacementType placement_type){
         m_encoder->print_placement_raw(placement_type);
     };
     void CodePyInterface::repair_request(int index,std::vector<int> &vec){

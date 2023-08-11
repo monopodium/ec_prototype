@@ -1,7 +1,13 @@
 #include "General.h"
 
-namespace REPAIR
+namespace ECProject
 {
+
+    bool encode_one(char **data_ptrs, char **coding_ptrs,int block_num,int blocksize)
+    {
+        std::vector<int> last_matrix(block_num, 1);
+        jerasure_matrix_encode(block_num, 1, 8, last_matrix.data(), data_ptrs, coding_ptrs, blocksize);        
+    }
     int Cluster::return_id()
     {
         return m_cluster_id;
@@ -108,12 +114,22 @@ namespace REPAIR
             vec.push_back(block_to_index(each_block));
         }
     };
-    void Code_Placement::set_parameter(int n_in, int k_in, int r_in, int w)
+    void Code_Placement::set_parameter(int n_in, int k_in, int r_in,int g_in, int l_in, int w)
     {
-        m_n = n_in;
-        m_k = k_in;
-        m_r = r_in;
-        nkr_to_klgr(m_n, m_k, m_r);
+        if(n_in!=-1 && k_in!=-1 && r_in!=-1){
+            m_n = n_in;
+            m_k = k_in;
+            m_r = r_in;
+            m_l_stable = false;
+            nkr_to_klgr(m_n, m_k, m_r);
+        }
+        if(k_in!=-1 && l_in!=-1 && g_in!=-1){
+            m_k = k_in;
+            m_l = l_in;
+            m_g = g_in;
+            klgr_to_nkr(m_k, m_l, m_g, ceil(m_k, m_l));
+            m_l_stable = true;
+        }     
         check_parameter();
         m_raw_stripe.clear();
         m_stripe_information.clear();
@@ -153,13 +169,35 @@ namespace REPAIR
     {
         return m_r;
     };
-    REPAIR::Placement Code_Placement::generate_placement(REPAIR::PlacementType placement_type, int random_seed)
+    void Code_Placement::print_transferplan(const TransferPlan transferplan)
+    {
+        
+        for(int i = 0;i<transferplan.size();i++){
+            auto block_trans = transferplan[i];
+            std::cout<<s_index_to_string(i);
+            if(block_trans[0]==-1){
+                std::cout <<" into cluster "<<block_trans[1]<<std::endl<<std::flush;
+            }else{
+                std::cout<<" from block: "<<std::flush;
+                for(int j = 0;j<block_trans.size();j++){
+                    if(block_trans[j]==-1){
+                        std::cout <<" into cluster "<<block_trans[j+1]<<std::flush;
+                        break;
+                    }else{
+                        std::cout<<s_index_to_string(block_trans[j])<<" "<<std::flush;
+                    }
+                }
+                std::cout<<std::endl<<std::flush;
+            }
+        }
+    };
+    ECProject::Placement Code_Placement::generate_placement(ECProject::PlacementType placement_type, int random_seed)
     {
 
         if (m_first)
         {
-            generate_raw_information();
             generate_stripe_information();
+            generate_raw_information();
             generate_block_repair_request();
             calculate_distance();
             generate_flat_placement();
@@ -173,20 +211,20 @@ namespace REPAIR
         if(!check_parameter()){
             return placement_return;
         }
-        if (placement_type == REPAIR::Random)
+        if (placement_type == ECProject::Random)
         {
             generate_random_placement(random_seed);
             placement_map = m_random_placement_map;
         }
-        else if (placement_type == REPAIR::Flat)
+        else if (placement_type == ECProject::Flat)
         {
             placement_map = m_flat_placement_map;
         }
-        else if (placement_type == REPAIR::Best_Placement)
+        else if (placement_type == ECProject::Best_Placement)
         {
             placement_map = m_best_placement_map;
         }
-        else if (placement_type == REPAIR::Sub_Optimal)
+        else if (placement_type == ECProject::Sub_Optimal)
         {
             placement_map = m_sub_optimal_placement_map;
         }
@@ -216,26 +254,26 @@ namespace REPAIR
         }
         return placement_return;
     }
-    std::pair<double, double> Code_Placement::return_DRC_NRC(REPAIR::PlacementType placement_type,int seed)
+    std::pair<double, double> Code_Placement::return_DRC_NRC(ECProject::PlacementType placement_type,int seed)
     {
         if(!check_parameter()){
             return std::make_pair(-1.0, -1.0);
         }
         generate_placement(placement_type, seed);
-        if (placement_type == REPAIR::Random)
+        if (placement_type == ECProject::Random)
         {
             
             generate_repair_cost(m_random_placement_map);
         }
-        else if (placement_type == REPAIR::Flat)
+        else if (placement_type == ECProject::Flat)
         {
             generate_repair_cost(m_flat_placement_map);
         }
-        else if (placement_type == REPAIR::Best_Placement)
+        else if (placement_type == ECProject::Best_Placement)
         {
             generate_repair_cost(m_best_placement_map);
         }
-        else if (placement_type == REPAIR::Sub_Optimal)
+        else if (placement_type == ECProject::Sub_Optimal)
         {
             generate_repair_cost(m_sub_optimal_placement_map);
         }
@@ -286,7 +324,7 @@ namespace REPAIR
             m_block_repair_cost[item] = repair_set.size() - 1;
         }
     };
-    const REPAIR::PlacementRaw Code_Placement::select_placement_raw(PlacementType placement_type){
+    const ECProject::PlacementRaw Code_Placement::select_placement_raw(PlacementType placement_type){
         if(placement_type==PlacementType::Flat){
             return m_flat_placement_raw;
         }else if(placement_type==PlacementType::Random){

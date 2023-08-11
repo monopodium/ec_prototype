@@ -1,6 +1,11 @@
 
 import os
 
+dn_per_cluster_num
+cluster_num
+exp_type
+sub_exp
+
 current_path = os.getcwd()
 parent_path = os.path.dirname(current_path)
 datanode_number_per_AZ  = 20
@@ -8,7 +13,7 @@ memcached_port_start = 18000
 datanode_port_start = memcached_port_start + 1000
 AZid_start = 0
 iftest = False
-
+  
 # proxy_ip_list = [
 #     ["0.0.0.0",50005],
 #     ["0.0.0.0",50015],

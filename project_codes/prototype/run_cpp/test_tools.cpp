@@ -1,305 +1,332 @@
-#include <azure_lrc.h>
-#include "toolbox.h"
-#include <set>
-namespace OppoProject
+#include "lrc_definition.h"
+#include "General.h"
+#include <sstream>
+#include "jerasure.h"
+#include "reed_sol.h"
+#include "cauchy.h"
+void test_encode_tansfer(ECProject::Code_Placement &encoder);
+void test_repair_plan(ECProject::Code_Placement &LRC_encoder);
+std::vector<std::vector<int>> lrc_n_k_r = {
+    {6, 3, 2}, //
+    {7, 4, 3},
+    {8,  3, 3},
+    {9, 4, 2}, //
+    {10, 7, 4},
+    {11, 6, 3}, //
+    {12, 6, 3}, //
+    {14, 9, 4},
+    {14, 10, 6}, //
+    {15, 10, 5}, //
+    {16, 10, 5},
+    {16, 10, 6},
+    {16, 11, 7},
+    {16, 12, 5},
+    {16, 12, 6}, //
+    {17, 12, 4},
+    {17, 12, 5},
+    {17, 12, 6},
+    {18, 12, 3},
+    {18, 12, 4}, //
+    {18, 12, 5},
+    {19, 12, 4},
+    {20, 12, 3},
+    {21, 13, 5},
+    {24, 15, 5} //
+};
+int main()
 {
-    bool partial_decoding_helper(std::unordered_map<int, std::vector<char>> all_origin, std::vector<int> failed_data_and_parity, std::unordered_map<int, std::unordered_map<int, std::vector<char>>> data_or_parity, int shard_size, int k, int g, int l)
+    ECProject::Azure_LRC_Class LRC_encoder;
+    for (auto each_nkr : lrc_n_k_r)
     {
-        std::set<int> func_idx;
+        std::cout << "=====random====" << std::endl;
 
-        std::vector<int> matrix((g + l) * k, 0);
-        lrc_make_matrix(k, g, l, matrix.data());
-        // 首先判断能不能解码：
-        std::vector<int> survive_block;
-        for (int i = 0; i < k + l + g; i++)
-        {
-            if (std::find(failed_data_and_parity.begin(), failed_data_and_parity.end(), i) == failed_data_and_parity.end())
-            {
-                survive_block.push_back(i);
-            }
-        }
-        int expect_funx_number = k;
-        if (survive_block.size() <= size_t(k))
-        {
-            if (check_decodable_azure_lrc(k, g, l, failed_data_and_parity, matrix) != 1)
-            {
-                std::cout << "Not decodable!!!" << std::endl;
-                return false;
-            }
-        }
+        int n = each_nkr[0];
+        int k = each_nkr[1];
+        int r = each_nkr[2];
+        LRC_encoder.set_parameter(n, k, r);
+        LRC_encoder.set_debug(true);
+        test_encode_tansfer(LRC_encoder);
+    }
+    return 0;
+}
 
-        for (int i = 0; i < int(failed_data_and_parity.size()); i++)
-        {
-            if (failed_data_and_parity[i] >= k && failed_data_and_parity[i] < k + g + l)
-            {
-                func_idx.insert(failed_data_and_parity[i]);
-            }
-        }
+void test_encode_tansfer(ECProject::Code_Placement &encoder)
+{
+    std::cout<<"=============Basic=============="<<std::endl;
+    ECProject::TransferPlan transfer_plan; 
+    encoder.encode_tansfer_plan(ECProject::EncodeTransferType::Basic, transfer_plan, ECProject::PlacementType::Sub_Optimal);
+    // for(int i = 0;i < transfer_plan.size();i++){
+    //     std::cout<<"index:"<<i<<std::endl;
+    //     for(int j = 0;j < transfer_plan[i].size();j++){
+    //         std::cout<< transfer_plan[i][j]<<" ";
+    //     }
+    //     std::cout<<std::endl;
+    // }
+    std::pair<double, double> cost_balance = encoder.encode_tansfer_cost_balance(ECProject::EncodeTransferType::Basic, ECProject::PlacementType::Sub_Optimal);
+    double cost_basic = cost_balance.first;
+    double balance_basic = cost_balance.second;
+    std::cout<<"cost:   "<<cost_basic<<std::endl;
+    std::cout<<"balance:"<<balance_basic<<std::endl;
 
-        for (int i = k; i < (k + g + l); i++)
+    std::cout<<"=============Optimized=============="<<std::endl;
+    ECProject::TransferPlan transfer_plan_optimized; 
+    encoder.encode_tansfer_plan(ECProject::EncodeTransferType::Optimized, transfer_plan_optimized, ECProject::PlacementType::Sub_Optimal);
+    for(int i = 0;i < transfer_plan_optimized.size();i++){
+        std::cout<<"index:"<<i<<std::endl;
+        for(int j = 0;j < transfer_plan_optimized[i].size();j++){
+            std::cout<< transfer_plan_optimized[i][j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+    cost_balance = encoder.encode_tansfer_cost_balance(ECProject::EncodeTransferType::Optimized, ECProject::PlacementType::Sub_Optimal);
+    double cost_optimize = cost_balance.first;
+    double balance_optimize = cost_balance.second;
+    std::cout<<"cost:   "<<cost_optimize<<std::endl;
+    std::cout<<"balance:"<<balance_optimize<<std::endl;
+    if(balance_optimize<balance_basic){
+        std::cout<<"traffic good!"<<std::endl;
+    }
+    if(balance_optimize>balance_basic){
+        std::cout<<"traffic bad!"<<std::endl;
+    }
+
+    if(cost_optimize<cost_basic){
+        std::cout<<"cost good!"<<std::endl;
+    }
+    if(cost_optimize==cost_basic){
+        std::cout<<"cost equal!"<<std::endl;
+    }    
+    if(cost_optimize>cost_basic){
+        std::cout<<"cost bad!"<<std::endl;
+    }
+}
+void test_cauchy_matrix(){
+    int k, m,w;
+    w = 8;
+    k = 2;
+    m = 2;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    int *matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+    
+    k = 4;
+    m = 2;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+
+    k = 8;
+    m = 2;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+    k = 16;
+    m = 2;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+    k = 4;
+    m = 4;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+    k = 8;
+    m = 4;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+    
+    k = 16;
+    m = 4;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+    k = 32;
+    m = 4;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+}
+void test_repair_plan(ECProject::Code_Placement &LRC_encoder){
+    ECProject::Placement pppp;
+    int seed = 999;
+    for (auto each_nkr : lrc_n_k_r)
+    {
+        std::cout << "=====random====" << std::endl;
+
+        int n = each_nkr[0];
+        int k = each_nkr[1];
+        int r = each_nkr[2];
+
+        LRC_encoder.set_parameter(n, k, r);
+        LRC_encoder.set_debug(true);
+        int g = LRC_encoder.g_global_block_num();
+        int l = LRC_encoder.l_local_block_num();
+        // int *final_matrix;
+
+        std::vector<int> final_matrix(k*(g+l), 0);
+        //LRC_encoder.xorbas_make_matrix(k, g, l, final_matrix.data());
+        seed++;
+        ECProject::Placement pppp = LRC_encoder.generate_placement(ECProject::Random, seed);
+        std::cout << "n = " << each_nkr[0] << " "
+                  << "k = " << each_nkr[1] << " "
+                  << "r = " << each_nkr[2] << " d = " << LRC_encoder.calculate_distance() << std::endl;
+        for (auto each_i : pppp)
         {
-            if (func_idx.size() == failed_data_and_parity.size())
-            {
-                break;
-            }
-            func_idx.insert(i);
+            std::cout << each_i << " ";
         }
         std::cout << std::endl;
-
-        for (int i = 0; i < g + l; i++)
+        for (int i = 0; i < each_nkr[0]; i++)
         {
-            for (int j = 0; j < k; j++)
+            std::vector<int> vec;
+            LRC_encoder.repair_request(i, vec);
+            std::cout << "i:" << i << std::endl;
+            for (auto jjj : vec)
             {
-                std::cout << matrix[i * k + j] << " ";
+                std::cout << jjj << " ";
             }
             std::cout << std::endl;
         }
-        std::cout << "begining" << std::endl;
-        for (auto &p : data_or_parity)
+        std::cout << std::endl;
+
+        LRC_encoder.print_placement_raw(ECProject::Random);
+    }
+    for (auto each_nkr : lrc_n_k_r)
+    {
+        std::cout << "=====flat====" << std::endl;
+        LRC_encoder.set_parameter(each_nkr[0], each_nkr[1], each_nkr[2]);
+        ECProject::Placement pppp = LRC_encoder.generate_placement(ECProject::Flat);
+        std::cout << each_nkr[0] << " " << each_nkr[1] << " " << each_nkr[2] << " " << std::endl;
+        for (auto each_i : pppp)
         {
-            std::vector<std::pair<int, std::vector<char>>> saved_merge;
-            std::vector<char> merge_result(shard_size);
-            int count = p.second.size();
-            std::vector<char *> v_data(count);
-            std::vector<char *> v_coding(1);
-            char **data = (char **)v_data.data();
-            char **coding = (char **)v_coding.data();
-            for (auto &t : func_idx)
-            {
-                std::vector<int> new_matrix(1 * count, 1);
-                int real_idx = t - k;
-                int *coff = &(matrix[real_idx * k]);
-                // std::cout << "coff begin" << std::endl;
-                // for (int i = 0; i < k; i++) {
-                //     std::cout << coff[i] << " ";
-                // }
-                // std::cout << std::endl;
-                // std::cout << "coff end" << std::endl;
-                int idx = 0;
-                for (auto &q : p.second)
-                {
-                    if (q.first < k)
-                    {
-                        new_matrix[idx] = coff[q.first];
-                    }
-                    else
-                    {
-                        new_matrix[idx] = (q.first == t);
-                    }
-                    data[idx] = q.second.data();
-                    idx++;
-                }
-                coding[0] = merge_result.data();
-                int sum = 0;
-                for (auto &ss : new_matrix)
-                {
-                    sum += ss;
-                    std::cout << ss << " ";
-                }
-                std::cout << std::endl;
-                jerasure_matrix_encode(count, 1, 8, new_matrix.data(), data, coding, shard_size);
-                if (sum == 0)
-                {
-                    std::vector<char> temp(shard_size, 0);
-                    merge_result = temp;
-                }
-                saved_merge.push_back({t, merge_result});
-            }
-            p.second.clear();
-            for (auto &q : saved_merge)
-            {
-                p.second[q.first] = q.second;
-            }
-        }
-        std::cout << "ending" << std::endl;
-        std::unordered_map<int, std::vector<char>> right;
-        for (auto &p : func_idx)
-        {
-            int count = data_or_parity.size();
-            std::vector<char *> v_data(count);
-            std::vector<char *> v_coding(1);
-            char **data = (char **)v_data.data();
-            char **coding = (char **)v_coding.data();
-            std::vector<char> temp(shard_size);
-            int idx = 0;
-            for (auto &q : data_or_parity)
-            {
-                data[idx++] = q.second[p].data();
-            }
-            coding[0] = temp.data();
-            std::vector<int> new_matrix(1 * count, 1);
-            jerasure_matrix_encode(count, 1, 8, new_matrix.data(), data, coding, shard_size);
-            right[p] = temp;
-        }
-        std::vector<int> left;
-        std::sort(failed_data_and_parity.begin(), failed_data_and_parity.end());
-        std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
-        for (auto &p : failed_data_and_parity)
-        {
-            std::cout << p << " ";
+            std::cout << each_i << " ";
         }
         std::cout << std::endl;
-        for (auto &p : func_idx)
+        LRC_encoder.print_placement_raw(ECProject::Flat);
+    }
+    for (auto each_nkr : lrc_n_k_r)
+    {
+        std::cout << "=====Best_Placement====" << std::endl;
+        LRC_encoder.set_parameter(each_nkr[0], each_nkr[1], each_nkr[2]);
+        ECProject::Placement pppp = LRC_encoder.generate_placement(ECProject::Best_Placement);
+        std::cout << each_nkr[0] << " " << each_nkr[1] << " " << each_nkr[2] << " " << std::endl;
+        for (auto each_i : pppp)
         {
-            int real_idx = p - k;
-            int *coff = &(matrix[real_idx * k]);
-            for (int i = 0; i < int(failed_data_and_parity.size()); i++)
-            {
-                if (failed_data_and_parity[i] < k)
-                {
-                    left.push_back(coff[failed_data_and_parity[i]]);
-                }
-                else
-                {
-                    left.push_back(failed_data_and_parity[i] == p);
-                }
-            }
-        }
-        std::cout << "======================================================" << std::endl;
-        for (auto &p : left)
-        {
-            std::cout << p << " ";
+            std::cout << each_i << " ";
         }
         std::cout << std::endl;
-        std::vector<int> invert(left.size());
-        jerasure_invert_matrix(left.data(), invert.data(), failed_data_and_parity.size(), 8);
-        for (auto &p : invert)
+        LRC_encoder.print_placement_raw(ECProject::Best_Placement);
+        LRC_encoder.return_DRC_NRC(ECProject::Best_Placement);
+        double optimal_nrc = LRC_encoder.return_DRC_NRC(ECProject::Best_Placement).second;
+
+        std::stringstream ss1;
+        ss1 << std::fixed <<optimal_nrc;
+        std::cout<<"NRC:"<<ss1.str()<<std::endl;
+
+
+        std::cout << "=====Sub_Optimal_Placement====" << std::endl;
+        LRC_encoder.set_parameter(each_nkr[0], each_nkr[1], each_nkr[2]);
+        pppp = LRC_encoder.generate_placement(ECProject::Sub_Optimal);
+        std::cout << each_nkr[0] << " " << each_nkr[1] << " " << each_nkr[2] << " " << std::endl;
+        for (auto each_i : pppp)
         {
-            std::cout << p << " ";
+            std::cout << each_i << " ";
         }
         std::cout << std::endl;
-        std::vector<char *> v_data(failed_data_and_parity.size());
-        std::vector<char *> v_coding(failed_data_and_parity.size());
-        char **data = (char **)v_data.data();
-        char **coding = (char **)v_coding.data();
-        std::vector<std::vector<char>> repaired_shards(failed_data_and_parity.size(), std::vector<char>(shard_size));
-        int idx = 0;
-        std::cout << "###############$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-        for (auto &p : func_idx)
-        {
-            std::cout << p << " ";
-            data[idx] = right[p].data();
-            coding[idx] = repaired_shards[idx].data();
-            idx++;
-        }
-        std::cout << std::endl;
-        jerasure_matrix_encode(failed_data_and_parity.size(), failed_data_and_parity.size(), 8, invert.data(), data, coding, shard_size);
-
-        for (int i = 0; i < int(failed_data_and_parity.size()); i++)
-        {
-            int index = failed_data_and_parity[i];
-            std::string origin(all_origin[index].data(), shard_size);
-            std::string newshard(coding[i], shard_size);
-            if (newshard == origin)
-            {
-                std::cout << i << " "
-                          << "repair successfully!" << std::endl;
-                // std::cout << origin << std::endl;
-                // std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                // std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                // std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                // std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                // std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                // std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                // std::cout << newshard << std::endl;
-            }
-            else
-            {
-                std::cout << i << " "
-                          << "repair fail!" << std::endl;
-                std::cout << origin << std::endl;
-                std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-                std::cout << newshard << std::endl;
-            }
-        }
+        LRC_encoder.print_placement_raw(ECProject::Sub_Optimal);
+        LRC_encoder.return_DRC_NRC(ECProject::Sub_Optimal);
+        double sub_optimal_nrc = LRC_encoder.return_DRC_NRC(ECProject::Sub_Optimal).second;
+    
+        std::stringstream ss2;
+        ss2 << std::fixed <<sub_optimal_nrc;
+        std::cout<<"NRC:"<<ss2.str()<<std::endl;
+        // if(sub_optimal_nrc>optimal_nrc){
+        //     std::cout<<"ratio: "<<float(sub_optimal_nrc/optimal_nrc)<<std::endl;
+        //     std::cout<<"good parameter! "<<each_nkr[0]<<","<<each_nkr[1]<<","<<each_nkr[2]<<","<<std::endl;
+        // }
     }
-}
-int main()
-{
-    int k = 12;
-    int g = 6;
-    int l = 2;
-    std::vector<int> matrix;
-    // int *rs_matrix = reed_sol_vandermonde_coding_matrix(k, g, 8);
-    // matrix.resize(g * k);
-    // memcpy(matrix.data(), rs_matrix, g * k * sizeof(int));
-    // free(rs_matrix);
-
-    // std::vector<int> failed_shard_idx1 = {1, 2, 6, 7, 11, 15, 18, 19};
-    // std::cout << "check_decodable_azure_lrc1" << std::endl;
-    // std::cout << OppoProject::check_decodable_azure_lrc(k, g, l, failed_shard_idx1) << std::endl;
-    // std::cout << "check_decodable_azure_lrc2" << std::endl;
-    // std::vector<int> failed_shard_idx2 = {1, 2, 5, 8, 11, 15, 16, 19};
-    // std::cout << OppoProject::check_decodable_azure_lrc(k, g, l, failed_shard_idx2) << std::endl;
-
-    int shard_size = 512;
-    std::unordered_set<std::string> useless;
-    std::string value = OppoProject::gen_key(shard_size * k, useless);
-
-    int parity_blocks_number = g + l + 1;
-    std::vector<char *> v_data(k);
-    std::vector<char *> v_coding(parity_blocks_number);
-    char **data = (char **)v_data.data();
-    char **coding = (char **)v_coding.data();
-    std::vector<std::vector<char>> coding_area(parity_blocks_number, std::vector<char>(shard_size));
-
-    char *p_value = const_cast<char *>(value.data());
-    for (int i = 0; i < k; i++)
-    {
-        data[i] = p_value + i * shard_size;
-    }
-    for (int i = 0; i < parity_blocks_number; i++)
-    {
-        coding[i] = coding_area[i].data();
-    }
-    OppoProject::encode(k, g, l, data, coding, shard_size, OppoProject::Azure_LRC_1);
-
-    std::vector<int> failed_shard_idx = {2, 3, 6, 7, 14, 15, 18};
-    std::unordered_map<int, std::unordered_map<int, std::vector<char>>> data_or_parity;
-    int num_of_az = 3;
-    int num_nodes_per_az = (k + g + l - failed_shard_idx.size()) / num_of_az;
-    int idx = 0;
-    for (int i = 0; i < num_of_az; i++)
-    {
-        for (int j = 0; j < num_nodes_per_az; j++)
-        {
-            while (failed_shard_idx.end() != std::find(failed_shard_idx.begin(), failed_shard_idx.end(), idx))
-            {
-                idx++;
-            }
-            std::cout << idx << std::endl;
-            if (idx < k)
-            {
-                std::string temp(data[idx], shard_size);
-                data_or_parity[i][idx++].assign(temp.begin(), temp.end());
-            }
-            else
-            {
-                std::string temp(coding[idx - k], shard_size);
-                data_or_parity[i][idx++].assign(temp.begin(), temp.end());
-            }
+    int k, m,w;
+    w = 8;
+    k = 2;
+    m = 2;
+    std::cout<<"k: "<<k<<" m: "<<m<<std::endl;
+    //int *matrix = new int[100];
+    int *matrix = cauchy_good_general_coding_matrix(k, m, w);
+    std::cout<<"cauchy matrix:"<<std::endl;
+    for(int i = 0;i<m;i++)
+    { 
+        for(int j = 0;j<k;j++){
+            std::cout<<" "<<matrix[i*m+j]<<" ";
         }
-    }
-    std::unordered_map<int, std::vector<char>> all_origin;
-    for (int i = 0; i < int(failed_shard_idx.size()); i++)
-    {
-        int index = failed_shard_idx[i];
-        if (index < k)
-        {
-            std::string temp(data[index], shard_size);
-            all_origin[index].assign(temp.begin(), temp.end());
-        }
-        else
-        {
-            std::string temp(coding[index - k], shard_size);
-            all_origin[index].assign(temp.begin(), temp.end());
-        }
-    }
-    OppoProject::partial_decoding_helper(all_origin, failed_shard_idx, data_or_parity, shard_size, k, g, l);
-    return 0;
+        std::cout<<std::endl;
+    }    
 }

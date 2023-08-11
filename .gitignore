@@ -23,6 +23,9 @@ project_codes/LRCs/cmake/*
 *_deps
 *.data
 
+#logs
+*.log
+
 # Compiled Object files
 *.slo
 *.lo

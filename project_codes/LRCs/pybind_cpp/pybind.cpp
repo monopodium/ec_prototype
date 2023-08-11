@@ -4,7 +4,7 @@
 #include "interface.h"
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-using namespace REPAIR;
+using namespace ECProject;
 // int add(int i, int j)
 // {
 //     return i + j;

@@ -1,0 +1,1 @@
+python3.10 run_get_result.py --exp_type "encode" --dn_per_cluster_num 3 --cluster_num 5 --if_local True --sub_exp "all"

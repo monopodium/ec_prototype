@@ -1,46 +1,37 @@
 #ifndef CLIENT_H
 #define CLIENT_H
-
-#ifdef BAZEL_BUILD
-#include "src/proto/coordinator.grpc.pb.h"
-#else
-#include "coordinator.grpc.pb.h"
-#endif
-
 #include "meta_definition.h"
-#include <grpcpp/grpcpp.h>
-#include <asio.hpp>
-namespace OppoProject
+namespace ECProject
 {
   class Client
   {
   public:
-    Client(std::string ClientIP, int ClientPort, std::string CoordinatorIpPort) : m_coordinatorIpPort(CoordinatorIpPort),
-                                                                                  m_clientIPForGet(ClientIP),
-                                                                                  m_clientPortForGet(ClientPort),
-                                                                                  acceptor(io_context, asio::ip::tcp::endpoint(asio::ip::address::from_string(ClientIP.c_str()), m_clientPortForGet))
+    Client(std::string client_ip, int client_port) : m_clientip_for_get(client_ip)
+                                                  ,m_clientport_for_get(client_port)
+                                                  ,m_acceptor(m_io_context, asio::ip::tcp::endpoint(asio::ip::address::from_string(m_clientip_for_get), m_clientport_for_get))
     {
-      auto channel = grpc::CreateChannel(m_coordinatorIpPort, grpc::InsecureChannelCredentials());
-      m_coordinator_ptr = coordinator_proto::CoordinatorService::NewStub(channel);
     }
-    std::string sayHelloToCoordinatorByGrpc(std::string hello);
-    bool set(std::string key, std::string value, std::string flag);
-    bool SetParameterByGrpc(ECSchema input_ecschema);
-    bool get(std::string key, std::string &value);
-    bool repair(std::vector<int> failed_node_list);
-
-    // update
-    bool update(std::string key, int offset, int length);
-
+    bool set(std::string key, std::string value);
+    bool set_parameter_grpc(ECSchema input_ecschema);
+    bool set_coordinator(std::string CoordinatorIpPort);
+    std::string get(std::string key);
+    bool parse_command(int argc, char **argv);
   private:
     std::unique_ptr<coordinator_proto::CoordinatorService::Stub> m_coordinator_ptr;
-    std::string m_coordinatorIpPort;
-    std::string m_clientIPForGet;
-    int m_clientPortForGet;
-    asio::io_context io_context;
-    asio::ip::tcp::acceptor acceptor;
+    std::string m_coordinator_ip_port;
+    std::string m_clientip_for_get;
+    int m_clientport_for_get;
+    asio::io_context m_io_context;
+    asio::ip::tcp::acceptor m_acceptor;
+    ECSchema m_encode_parameter;
+    std::shared_ptr<Code_Placement> m_encoder;
+    bool set_to_datanode(const char *key, size_t key_length,
+                                    const char *value, size_t value_length, const char *ip, int port);
+    bool get_from_datanode(const char *key, size_t key_length,
+                                   char *value, size_t *value_length, int offset, int lenth, const char *ip, int port);
+    bool init_proxy(std::vector<std::string> ip_port_list);
+    std::map<std::string, std::unique_ptr<proxy_proto::proxyService::Stub>>
+    m_proxy_ptrs;
   };
-
-} // namespace OppoProject
-
+}
 #endif // CLIENT_H

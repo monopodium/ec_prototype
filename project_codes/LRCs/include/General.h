@@ -1,11 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
-#include "jerasure.h"
-#include "reed_sol.h"
+
 #include "lrc_definition.h"
 
-namespace REPAIR
+namespace ECProject
 {
+    bool encode_one(char **data_ptrs, char **coding_ptrs, int block_num,int blocksize);
     class Code_Placement
     {
         // 类型有三：数据块，局部校验块，全局校验块
@@ -22,9 +22,9 @@ namespace REPAIR
         virtual ~Code_Placement(){};
         virtual void set_debug(bool if_debug);
         virtual void print_information();
-        void set_parameter(int n_in, int k_in, int r_in, int w = 8);
-        virtual std::pair<double, double> return_DRC_NRC(REPAIR::PlacementType placement_type,int seed = 10);
-        virtual REPAIR::Placement generate_placement(REPAIR::PlacementType placement_type, int random_seed = 10);
+        void set_parameter(int n_in = -1, int k_in= -1, int r_in= -1,int g_in= -1,int l_in= -1, int w = 8);
+        virtual std::pair<double, double> return_DRC_NRC(ECProject::PlacementType placement_type,int seed = 10);
+        virtual ECProject::Placement generate_placement(ECProject::PlacementType placement_type, int random_seed = 10);
         // virtual void generate_best_placement() = 0;
         virtual int calculate_distance() = 0;
         virtual void nkr_to_klgr(int n, int k, int r) = 0;
@@ -43,6 +43,7 @@ namespace REPAIR
         virtual int r_group_block_num();
         virtual bool decode_in_group_xor(int group_data_number, char **data_ptrs, char **coding_ptrs, int blocksize);
         std::string s_index_to_string(int index);
+        void print_transferplan(const TransferPlan transferplan);
         virtual bool encode_tansfer_plan(EncodeTransferType encode_transfer_type, TransferPlan& transfer_plan, PlacementType placement_type = PlacementType::Sub_Optimal);
         virtual std::pair<double, double> encode_tansfer_cost_balance(EncodeTransferType encode_transfer_type, PlacementType placement_type = PlacementType::Sub_Optimal);
 
@@ -52,6 +53,8 @@ namespace REPAIR
         int m_r = 0;
         int m_l = 0;
         int m_g = 0;
+        bool m_l_stable = false;
+
         int m_d = 0;
         int m_w = 8;
         bool m_if_debug = false;
@@ -89,7 +92,7 @@ namespace REPAIR
         virtual void generate_sub_optimal_placement() = 0;
         void generate_random_placement(int random_seed = 10);
         
-        bool check_cluster_information(std::vector<REPAIR::Cluster> placement, std::map<std::string, int> placement_map);
+        bool check_cluster_information(std::vector<ECProject::Cluster> placement, std::map<std::string, int> placement_map);
         void generate_flat_placement();
         
     };

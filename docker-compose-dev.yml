@@ -6,3 +6,5 @@ services:
       - ./project_codes:/home/project
     stdin_open: true
     tty: true
+    ports:
+      - 127.0.0.1:31400:31400

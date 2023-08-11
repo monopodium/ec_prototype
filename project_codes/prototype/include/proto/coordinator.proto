@@ -1,0 +1,68 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package coordinator_proto;
+
+service CoordinatorService {
+    rpc setParameter(Parameter) returns(RepIfSetParaSucess) {};
+    rpc set_key_coordinator (SetRequest) returns (ReplyIPPortList){};
+    rpc get_proxy_ip_ports (ask_proxy_info) returns (proxy_ip_list){};
+    rpc get_key_info (key_info) returns (key_meta_info){};
+}
+message key_info{
+  string key = 1;
+}
+
+message ask_proxy_info{
+  bool ask_proxy = 1;
+}
+message RepIfSetParaSucess {
+  bool ifsetparameter = 1;
+}
+message key_meta_info{
+  repeated string ip = 1;
+  repeated int32 port = 2;
+  int32 value_size_bytes = 3;
+}
+message proxy_ip_list{
+  repeated string ip_port = 1;
+}
+message SetRequest{
+  string key = 1;
+  int32 valuesizebytes = 2;
+}
+
+message ReplyIPPortTrans{
+  string ip = 1;
+  int32 port = 2;
+  bool if_direct = 3;
+  repeated int32 from_blocks = 4;
+  int32 block_id = 5;
+  string proxy_ip_port = 6;
+}
+
+message ReplyIPPortList{
+  repeated ReplyIPPortTrans block_trans = 1;
+}
+message Parameter {
+  bool partial_decoding = 1;
+  int32 encodetype = 2;
+  int32 placementtype = 3;
+  int32 k_datablock = 4;
+  int32 l_localgroup = 5;
+  int32 g_m_globalparityblock = 6;
+  int32 encodetransfertype = 7;
+}

@@ -2,29 +2,20 @@
 
 int main(int argc, char **argv)
 {
-    std::string coordinator_ip = "0.0.0.0";
-    if (argc == 3) {
-        coordinator_ip = std::string(argv[2]);
+    if(argc != 3){
+        std::cout << "./run_proxy coordinator_ip_port proxy_ip_port" << std::endl;
+        std::cout << "./run_proxy 0.0.0.0:55555 0.0.0.0:15555" << std::endl;
+        exit(-1); 
     }
-    pid_t pid = fork();
-    if (pid > 0)
-    {
-        exit(0);
-    }
-    setsid();
-    
-    std::string ip_and_port(argv[1]);
-    if(false){
-        umask(0);
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
-    }
+    std::string coordinator_ip_port;
+    std::string proxy_ip_port;
+    coordinator_ip_port = std::string(argv[1]);
+    proxy_ip_port = std::string(argv[2]);
+    // config_path = std::string(argv[3]);
 
-    char buff[256];
-    getcwd(buff, 256);
-    std::string config_path = std::string(buff) + "/../../config/AZInformation.xml";
-    OppoProject::Proxy proxy(ip_and_port, config_path, coordinator_ip);
+    std::cout<<"proxy_ip_port:      "<<proxy_ip_port<<std::endl;
+    std::cout<<"coordinator_ip_port:"<<coordinator_ip_port<<std::endl;
+    ECProject::Proxy proxy(proxy_ip_port, coordinator_ip_port);
     proxy.Run();
     return 0;
 }
