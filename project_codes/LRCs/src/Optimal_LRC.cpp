@@ -1,11 +1,14 @@
 #include "General.h"
-namespace REPAIR
+namespace ECProject
 {
     bool Optimal_LRC_Class::check_parameter()
     {
         if (m_n % (m_r + 1) == 1)
         {
             //std::cout << "Parameters do not meet requirements!" << std::endl;
+            return false;
+        }
+        if (m_n<=0||m_k<=0||m_r<=0||m_l<=0||m_g<=0){
             return false;
         }
         return true;
@@ -63,6 +66,7 @@ namespace REPAIR
     void Optimal_LRC_Class::klgr_to_nkr(int k, int l, int g, int r)
     {
         m_n = k + l + g;
+        m_r = m_r;
     };
     void Optimal_LRC_Class::generate_stripe_information()
     {

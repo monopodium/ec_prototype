@@ -1,53 +1,36 @@
 #ifndef META_DEFINITION
 #define META_DEFINITION
+#include "lrc_definition.h"
 #include "devcommon.h"
-namespace OppoProject
+#include "lrc_definition.h"
+#include "General.h"
+#include "toolbox.h"
+
+namespace ECProject
 {
-  enum EncodeType
+  typedef struct ClusterItem
   {
-    RS,
-    OPPO_LRC,
-    Azure_LRC_1
-  };
-  enum PlacementType
-  {
-    Random,
-    Flat,
-    Best_Placement
-  };
-  typedef std::unordered_map<int, std::unordered_map<int, std::vector<char>>> partial_helper;
-  typedef struct AZitem
-  {
-    AZitem() : cur_node(0) {}
-    unsigned int AZ_id;
+    ClusterItem() {}
+    unsigned int cluster_id;
     std::string proxy_ip;
     int proxy_port;
-    std::vector<unsigned int> nodes;
-    int cur_node;
-  } AZitem;
-  typedef struct Nodeitem
+
+    std::vector<unsigned int> node_ids;
+  } ClusterItem;
+  typedef struct NodeItem
   {
-    unsigned int Node_id;
-    std::string Node_ip;
-    int Node_port;
-    int AZ_id;
-    std::unordered_set<int> stripes;
-  } Nodeitem;
-  typedef struct ObjectItemBigSmall
-  {
-    bool big_object;
-    int offset = -1;
-    int shard_idx = -1;
-    int object_size;
-    std::vector<unsigned int> stripes;
-  } ObjectItemBigSmall;
+    unsigned int node_id;
+    std::string node_ip;
+    int node_port;
+    int cluster_id;
+  } NodeItem;
 
   typedef struct StripeItem
   {
     unsigned int Stripe_id;
-    int shard_size;
-    int k, real_l, g_m, b;
-    std::vector<unsigned int> nodes;
+    int value_size_bytes;
+    int k, g_m, l_groups;
+    std::vector<unsigned int> node_ids;
     EncodeType encodetype;
     PlacementType placementtype;
   } StripeItem;
@@ -56,39 +39,21 @@ namespace OppoProject
   {
     ECSchema() = default;
 
-    ECSchema(bool partial_decoding, EncodeType encodetype, PlacementType placementtype, int k_datablock,
-             int real_l_localgroup, int g_m_globalparityblock, int b_datapergoup, int small_file_upper, int blob_size_upper)
+    ECSchema(bool partial_decoding, EncodeType encodetype, PlacementType placementtype,
+             EncodeTransferType encode_transfer_type, int k_datablock,
+             int l_localgroup, int g_m_globalparityblock)
         : partial_decoding(partial_decoding), encodetype(encodetype), placementtype(placementtype),
-          k_datablock(k_datablock), real_l_localgroup(real_l_localgroup),
-          g_m_globalparityblock(g_m_globalparityblock), b_datapergoup(b_datapergoup),
-          small_file_upper(small_file_upper), blob_size_upper(blob_size_upper) {}
+          encode_transfer_type(encode_transfer_type),
+          k_datablock(k_datablock), l_localgroup(l_localgroup),
+          g_m_globalparityblock(g_m_globalparityblock) {}
     bool partial_decoding;
     EncodeType encodetype;
     PlacementType placementtype;
+    EncodeTransferType encode_transfer_type;
     int k_datablock;
-    int real_l_localgroup;
+    int l_localgroup;
     int g_m_globalparityblock;
-    int b_datapergoup;
-    int small_file_upper;
-    int blob_size_upper;
-  } ECSchema;
-
-  typedef struct Range
-  {
-    int offset;
-    int length;
-    Range() = default;
-    Range(int offset, int length) : offset(offset), length(length) {}
-  } Range;
-
-  typedef struct ShardidxRange
-  {
-    int shardidx;
-    int offset_in_shard;
-    int range_length;
-    ShardidxRange() = default;
-    ShardidxRange(int idx, int offset, int length) : shardidx(idx), offset_in_shard(offset), range_length(length) {}
-  };
-} // namespace OppoProject
-
-#endif // META_DEFINITION
+    int r_datapergoup;
+  } ECSchema;  
+}
+#endif

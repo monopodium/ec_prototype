@@ -1,8 +1,9 @@
-#ifndef META_DEFINITION
-#define META_DEFINITION
+#ifndef LRC_META_DEFINITION
+#define LRC_META_DEFINITION
 #include "devcommon.h"
-namespace REPAIR
+namespace ECProject
 {
+    
     template <typename T>
     inline T ceil(T const &A, T const &B)
     {
@@ -27,19 +28,14 @@ namespace REPAIR
         Best_Placement,
         Sub_Optimal
     };
-    // namespace REPAIR
+    // namespace ECProject
     // data globle local
     //[cluster id, cluster id
     //data [-1]globle [-1] local [-1], -1 is directly transfer
     typedef std::vector<std::vector<int>> TransferPlan;
     typedef std::vector<unsigned int> Placement;
-    typedef std::map<std::string, std::vector<std::string>> RepairRequest;
-    typedef struct StripeItem
-    {
-        std::vector<unsigned int> node_ids;
-        int value_size_bytes;
-        int block_size_bytes;
-    } StripeItem;
+    typedef std::map<std::string, std::vector<std::string>> Request;
+
     class MyRand
     {
     public:
@@ -76,6 +72,8 @@ namespace REPAIR
         std::set<int> m_from_groups;
     };
     typedef std::vector<Cluster> PlacementRaw;
+    typedef std::map<std::string, std::vector<std::string>> RepairRequest;
+    typedef std::vector<unsigned int> Placement;
 }
 
 #endif

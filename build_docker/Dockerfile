@@ -18,6 +18,7 @@ RUN yum install -y wget \
     openssl \
     openssl-devel \
     openssh-server \
+    vim \
     telnet; \
     yum install libffi-devel  \
     perl make which epel-release -y ;\

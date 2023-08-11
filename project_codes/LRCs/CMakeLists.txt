@@ -1,33 +1,44 @@
 cmake_minimum_required(VERSION 3.15)
 project(LRCs)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "-g -Wall -std=c++11 -DASIO_STANDALONE")
 
-add_subdirectory(../../third_party/pybind11 ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/pybind11)
+#the directory for the third parity
+set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party)
+option(LRC_TEST_BUILD "Build doc target for LRC project" OFF)
+
+#add the pybind
+add_subdirectory(../../third_party/pybind11 "${THIRD_PARTY_DIR}/pybind11")
 set(simulator_source
         pybind_cpp/interface.cpp
         pybind_cpp/interface.h
         pybind_cpp/pybind.cpp)
 pybind11_add_module(LRCs_simulator ${simulator_source})
 
-set(CMAKE_CXX_STANDARD 11)
-#set(CMAKE_CXX_FLAGS "-g -Wall -DASIO_STANDALONE")
-set(CMAKE_CXX_FLAGS "-g -Wall -std=c++11 -DASIO_STANDALONE")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+#set the include directory for third parity
+list(APPEND THIRD_INCLUDE ${THIRD_PARTY_DIR}/gf-complete/include)
+list(APPEND THIRD_INCLUDE ${THIRD_PARTY_DIR}/jerasure/include)
+list(APPEND THIRD_INCLUDE ${THIRD_PARTY_DIR}/jerasure/include/jerasure)
+list(APPEND THIRD_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/gf-complete/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/jerasure/include/jerasure)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/jerasure/include)
+set(Jerasurelib ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/jerasure/lib/libJerasure.so)
+set(gf_completelib ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/gf-complete/lib/libgf_complete.so)
 
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/jerasure/lib)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/gf-complete/lib)
-
-
+# link_directories(${THIRD_PARTY_DIR}/jerasure/lib)
+# link_directories(${THIRD_PARTY_DIR}/gf-complete/lib)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/   PROJECT_SRC)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/include/   PROJECT_SRC)
-#echo PROJECT_SRC
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../../include/lrc_definition.h   PROJECT_SRC1)
-# message(${PROJECT_SRC1}) 
 
+add_library(LRCLibrary SHARED ${PROJECT_SRC})
+
+target_link_libraries(LRCLibrary
+${Jerasurelib} ${gf_completelib}
+)
+target_include_directories(LRCLibrary PUBLIC ${THIRD_INCLUDE})
+
+set_target_properties(LRCLibrary PROPERTIES output_name "LRCLibrary")
+
+if(LRC_TEST_BUILD)
 foreach (_target
         test_tools)
     add_executable(${_target}            
@@ -40,22 +51,19 @@ foreach (_target
             ${CMAKE_CURRENT_SOURCE_DIR}/${_target}.cpp
             )
     target_link_libraries(${_target}
-            -lJerasure -lgf_complete
+                ${Jerasurelib} ${gf_completelib}
             )
 endforeach ()
+endif()
 
 
-add_library(utils SHARED ${PROJECT_SRC})
 
-set_target_properties(utils PROPERTIES output_name "utils")
+
+
 
 target_compile_definitions(LRCs_simulator
                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
-set(Jerasurelib ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/jerasure/lib/libJerasure.so)
-set(gf_completelib ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/gf-complete/lib/libgf_complete.so)
-
 target_link_libraries(LRCs_simulator
-PRIVATE
-${Jerasurelib} ${gf_completelib} utils
+PUBLIC
+${Jerasurelib} ${gf_completelib} LRCLibrary
 )
-

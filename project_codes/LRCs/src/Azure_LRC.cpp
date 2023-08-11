@@ -1,11 +1,14 @@
 #include "General.h"
-namespace REPAIR
+namespace ECProject
 {
     bool Azure_LRC_Class::check_parameter()
     {
         if (m_n <= m_k + m_l)
         {
             // std::cout << "Parameters do not meet requirements!" << std::endl;
+            return false;
+        }
+        if (m_n<=0||m_k<=0||m_r<=0||m_l<=0||m_g<=0){
             return false;
         }
         return true;
@@ -350,25 +353,54 @@ namespace REPAIR
     void Azure_LRC_Class::klgr_to_nkr(int k, int l, int g, int r)
     {
         m_n = k + l + g;
+        m_r = r;
     };
     void Azure_LRC_Class::generate_stripe_information()
     {
         int group_ptr = -1;
-        for (int i = 0; i < m_k; i++)
-        {
-            std::string block = index_to_str("D", i);
-            if (i % m_r == 0)
-            {
-                std::vector<std::string> group;
-                m_stripe_information.push_back(group);
-                group_ptr++;
+        int data_block_ptr = 0;
+
+        std::vector<int> each_r(m_l, 0);
+
+
+        if(m_l_stable){
+            for(int i = 0;i < m_k;i++){
+                each_r[i%m_l]++;
             }
-            m_stripe_information[int(i / m_r)].push_back(block);
-            m_block_to_groupnumber[block] = group_ptr;
+            std::vector<int>::iterator maxElement = std::max_element(each_r.begin(), each_r.end());
+            m_r = *maxElement;
+            for(int i = 0; i<m_l;i++){
+                std::vector<std::string> group;
+                for(int j = 0;j<each_r[i];j++){
+                    std::string block = index_to_str("D", data_block_ptr);
+                    group.push_back(block);
+                    m_block_to_groupnumber[block] = i;
+                    data_block_ptr++;
+                    
+                }
+                group_ptr++;
+                m_stripe_information.push_back(group);
+            }
+        }else{
+            for (int i = 0; i < m_k; i++)
+            {
+                std::string block = index_to_str("D", i);
+                if (i % m_r == 0)
+                {
+                    std::vector<std::string> group;
+                    m_stripe_information.push_back(group);
+                    group_ptr++;
+                }
+                m_stripe_information[int(i / m_r)].push_back(block);
+                m_block_to_groupnumber[block] = group_ptr;
+            }
+            m_l = group_ptr + 1;
         }
         std::vector<std::string> group;
         m_stripe_information.push_back(group);
         group_ptr++;
+        std::cout<<"group_ptr:"<<group_ptr<<std::endl;
+        std::cout<<"m_g"<<m_g<<std::endl;
         for (int i = 0; i < m_g; i++)
         {
             std::string block = index_to_str("G", i);
@@ -421,7 +453,7 @@ namespace REPAIR
     {
         std::vector<int> new_matrix((m_g + m_l) * m_k, 0);
         azure_lrc_make_matrix(m_k, m_g, m_l, new_matrix.data());
-        jerasure_matrix_encode(m_k, m_g + m_l, 8, new_matrix.data(), data_ptrs, coding_ptrs, blocksize);
+        jerasure_matrix_encode(m_k, m_g + m_l, m_w, new_matrix.data(), data_ptrs, coding_ptrs, blocksize);
         return true;
     };
     bool Azure_LRC_Class::decode(char **data_ptrs, char **coding_ptrs, int *erasures, int blocksize)
@@ -433,7 +465,7 @@ namespace REPAIR
         int r = (k + l - 1) / l;
         int *matrix = NULL;
 
-        matrix = reed_sol_vandermonde_coding_matrix(k, g + 1, 8);
+        matrix = reed_sol_vandermonde_coding_matrix(k, g + 1, m_w);
         if (matrix == NULL)
         {
             std::cout << "matrix == NULL" << std::endl;
@@ -471,7 +503,7 @@ namespace REPAIR
 
     bool Azure_LRC_Class::encode_tansfer_plan(EncodeTransferType encode_transfer_type, TransferPlan &transfer_plan, PlacementType placement_type)
     {
-        REPAIR::Placement placement_plan = generate_placement(placement_type);
+        ECProject::Placement placement_plan = generate_placement(placement_type);
         // for(int i = 0;i<placement_plan.size();i++){
         //     std::cout<<"placement_plan[i]:"<<i<<"  "<<placement_plan[i]<<std::endl;
         // }
@@ -513,7 +545,7 @@ namespace REPAIR
     //
     std::pair<double, double> Azure_LRC_Class::encode_tansfer_cost_balance(EncodeTransferType encode_transfer_type, PlacementType placement_type)
     {
-        REPAIR::TransferPlan transfer_plan;
+        ECProject::TransferPlan transfer_plan;
         encode_tansfer_plan(encode_transfer_type, transfer_plan);
         double cost = 0;
         double traffic_balance_ratio = 0;

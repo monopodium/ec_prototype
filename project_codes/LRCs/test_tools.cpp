@@ -4,8 +4,8 @@
 #include "jerasure.h"
 #include "reed_sol.h"
 #include "cauchy.h"
-void test_encode_tansfer(REPAIR::Code_Placement &encoder);
-void test_repair_plan(REPAIR::Code_Placement &LRC_encoder);
+void test_encode_tansfer(ECProject::Code_Placement &encoder);
+void test_repair_plan(ECProject::Code_Placement &LRC_encoder);
 std::vector<std::vector<int>> lrc_n_k_r = {
     {6, 3, 2}, //
     {7, 4, 3},
@@ -35,7 +35,7 @@ std::vector<std::vector<int>> lrc_n_k_r = {
 };
 int main()
 {
-    REPAIR::Azure_LRC_Class LRC_encoder;
+    ECProject::Azure_LRC_Class LRC_encoder;
     for (auto each_nkr : lrc_n_k_r)
     {
         std::cout << "=====random====" << std::endl;
@@ -50,11 +50,11 @@ int main()
     return 0;
 }
 
-void test_encode_tansfer(REPAIR::Code_Placement &encoder)
+void test_encode_tansfer(ECProject::Code_Placement &encoder)
 {
     std::cout<<"=============Basic=============="<<std::endl;
-    REPAIR::TransferPlan transfer_plan; 
-    encoder.encode_tansfer_plan(REPAIR::EncodeTransferType::Basic, transfer_plan, REPAIR::PlacementType::Sub_Optimal);
+    ECProject::TransferPlan transfer_plan; 
+    encoder.encode_tansfer_plan(ECProject::EncodeTransferType::Basic, transfer_plan, ECProject::PlacementType::Sub_Optimal);
     // for(int i = 0;i < transfer_plan.size();i++){
     //     std::cout<<"index:"<<i<<std::endl;
     //     for(int j = 0;j < transfer_plan[i].size();j++){
@@ -62,15 +62,15 @@ void test_encode_tansfer(REPAIR::Code_Placement &encoder)
     //     }
     //     std::cout<<std::endl;
     // }
-    std::pair<double, double> cost_balance = encoder.encode_tansfer_cost_balance(REPAIR::EncodeTransferType::Basic, REPAIR::PlacementType::Sub_Optimal);
+    std::pair<double, double> cost_balance = encoder.encode_tansfer_cost_balance(ECProject::EncodeTransferType::Basic, ECProject::PlacementType::Sub_Optimal);
     double cost_basic = cost_balance.first;
     double balance_basic = cost_balance.second;
     std::cout<<"cost:   "<<cost_basic<<std::endl;
     std::cout<<"balance:"<<balance_basic<<std::endl;
 
     std::cout<<"=============Optimized=============="<<std::endl;
-    REPAIR::TransferPlan transfer_plan_optimized; 
-    encoder.encode_tansfer_plan(REPAIR::EncodeTransferType::Optimized, transfer_plan_optimized, REPAIR::PlacementType::Sub_Optimal);
+    ECProject::TransferPlan transfer_plan_optimized; 
+    encoder.encode_tansfer_plan(ECProject::EncodeTransferType::Optimized, transfer_plan_optimized, ECProject::PlacementType::Sub_Optimal);
     for(int i = 0;i < transfer_plan_optimized.size();i++){
         std::cout<<"index:"<<i<<std::endl;
         for(int j = 0;j < transfer_plan_optimized[i].size();j++){
@@ -78,7 +78,7 @@ void test_encode_tansfer(REPAIR::Code_Placement &encoder)
         }
         std::cout<<std::endl;
     }
-    cost_balance = encoder.encode_tansfer_cost_balance(REPAIR::EncodeTransferType::Optimized, REPAIR::PlacementType::Sub_Optimal);
+    cost_balance = encoder.encode_tansfer_cost_balance(ECProject::EncodeTransferType::Optimized, ECProject::PlacementType::Sub_Optimal);
     double cost_optimize = cost_balance.first;
     double balance_optimize = cost_balance.second;
     std::cout<<"cost:   "<<cost_optimize<<std::endl;
@@ -216,8 +216,8 @@ void test_cauchy_matrix(){
         std::cout<<std::endl;
     }
 }
-void test_repair_plan(REPAIR::Code_Placement &LRC_encoder){
-    REPAIR::Placement pppp;
+void test_repair_plan(ECProject::Code_Placement &LRC_encoder){
+    ECProject::Placement pppp;
     int seed = 999;
     for (auto each_nkr : lrc_n_k_r)
     {
@@ -236,7 +236,7 @@ void test_repair_plan(REPAIR::Code_Placement &LRC_encoder){
         std::vector<int> final_matrix(k*(g+l), 0);
         //LRC_encoder.xorbas_make_matrix(k, g, l, final_matrix.data());
         seed++;
-        REPAIR::Placement pppp = LRC_encoder.generate_placement(REPAIR::Random, seed);
+        ECProject::Placement pppp = LRC_encoder.generate_placement(ECProject::Random, seed);
         std::cout << "n = " << each_nkr[0] << " "
                   << "k = " << each_nkr[1] << " "
                   << "r = " << each_nkr[2] << " d = " << LRC_encoder.calculate_distance() << std::endl;
@@ -258,35 +258,35 @@ void test_repair_plan(REPAIR::Code_Placement &LRC_encoder){
         }
         std::cout << std::endl;
 
-        LRC_encoder.print_placement_raw(REPAIR::Random);
+        LRC_encoder.print_placement_raw(ECProject::Random);
     }
     for (auto each_nkr : lrc_n_k_r)
     {
         std::cout << "=====flat====" << std::endl;
         LRC_encoder.set_parameter(each_nkr[0], each_nkr[1], each_nkr[2]);
-        REPAIR::Placement pppp = LRC_encoder.generate_placement(REPAIR::Flat);
+        ECProject::Placement pppp = LRC_encoder.generate_placement(ECProject::Flat);
         std::cout << each_nkr[0] << " " << each_nkr[1] << " " << each_nkr[2] << " " << std::endl;
         for (auto each_i : pppp)
         {
             std::cout << each_i << " ";
         }
         std::cout << std::endl;
-        LRC_encoder.print_placement_raw(REPAIR::Flat);
+        LRC_encoder.print_placement_raw(ECProject::Flat);
     }
     for (auto each_nkr : lrc_n_k_r)
     {
         std::cout << "=====Best_Placement====" << std::endl;
         LRC_encoder.set_parameter(each_nkr[0], each_nkr[1], each_nkr[2]);
-        REPAIR::Placement pppp = LRC_encoder.generate_placement(REPAIR::Best_Placement);
+        ECProject::Placement pppp = LRC_encoder.generate_placement(ECProject::Best_Placement);
         std::cout << each_nkr[0] << " " << each_nkr[1] << " " << each_nkr[2] << " " << std::endl;
         for (auto each_i : pppp)
         {
             std::cout << each_i << " ";
         }
         std::cout << std::endl;
-        LRC_encoder.print_placement_raw(REPAIR::Best_Placement);
-        LRC_encoder.return_DRC_NRC(REPAIR::Best_Placement);
-        double optimal_nrc = LRC_encoder.return_DRC_NRC(REPAIR::Best_Placement).second;
+        LRC_encoder.print_placement_raw(ECProject::Best_Placement);
+        LRC_encoder.return_DRC_NRC(ECProject::Best_Placement);
+        double optimal_nrc = LRC_encoder.return_DRC_NRC(ECProject::Best_Placement).second;
 
         std::stringstream ss1;
         ss1 << std::fixed <<optimal_nrc;
@@ -295,16 +295,16 @@ void test_repair_plan(REPAIR::Code_Placement &LRC_encoder){
 
         std::cout << "=====Sub_Optimal_Placement====" << std::endl;
         LRC_encoder.set_parameter(each_nkr[0], each_nkr[1], each_nkr[2]);
-        pppp = LRC_encoder.generate_placement(REPAIR::Sub_Optimal);
+        pppp = LRC_encoder.generate_placement(ECProject::Sub_Optimal);
         std::cout << each_nkr[0] << " " << each_nkr[1] << " " << each_nkr[2] << " " << std::endl;
         for (auto each_i : pppp)
         {
             std::cout << each_i << " ";
         }
         std::cout << std::endl;
-        LRC_encoder.print_placement_raw(REPAIR::Sub_Optimal);
-        LRC_encoder.return_DRC_NRC(REPAIR::Sub_Optimal);
-        double sub_optimal_nrc = LRC_encoder.return_DRC_NRC(REPAIR::Sub_Optimal).second;
+        LRC_encoder.print_placement_raw(ECProject::Sub_Optimal);
+        LRC_encoder.return_DRC_NRC(ECProject::Sub_Optimal);
+        double sub_optimal_nrc = LRC_encoder.return_DRC_NRC(ECProject::Sub_Optimal).second;
     
         std::stringstream ss2;
         ss2 << std::fixed <<sub_optimal_nrc;

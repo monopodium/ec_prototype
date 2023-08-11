@@ -1,10 +1,13 @@
 #include "General.h"
-namespace REPAIR
+namespace ECProject
 {
     bool Azure_LRC_1_Class::check_parameter()
     {
         if (m_k + m_l >= m_n)
         {
+            return false;
+        }
+        if (m_n<=0||m_k<=0||m_r<=0||m_l<=0||m_g<=0){
             return false;
         }
         return true;
@@ -61,6 +64,7 @@ namespace REPAIR
     void Azure_LRC_1_Class::klgr_to_nkr(int k, int l, int g, int r)
     {
         m_n = k + l + g;
+        m_r = r;
     };
     void Azure_LRC_1_Class::generate_stripe_information()
     {
